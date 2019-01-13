@@ -1,19 +1,19 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class Selectable : MonoBehaviour, ISelectHandler, IPointerClickHandler,
     IDeselectHandler {
 
     // All the selectables
-    public static List<Selectable> allSelectables =
-        new List<Selectable>();
+    public static Army allSelectables = new Army();
     // The current selected ones
-    public static List<Selectable> currentlySelected =
-        new List<Selectable>();
+    public static Army currentlySelected = new Army();
 
     // Renderer
     private Renderer myRenderer;
+
+    // If it's a unit that moves or not
+    private bool isUnit;
 
     // Material to show it it's selected or not
     [SerializeField]
@@ -23,8 +23,17 @@ public class Selectable : MonoBehaviour, ISelectHandler, IPointerClickHandler,
 
     // On awake adds the object to all the objects
     void Awake() {
-        allSelectables.Add(this);
-        myRenderer = GetComponent<Renderer>();
+        // Checks if the object is a unit
+        isUnit = GetComponentInParent<Unit>() != null;
+        if (isUnit) {
+            // If it's a unit sets it's values and adds it to the 
+            // currentselected
+            GetComponentInParent<Unit>().UnitName = name;
+            GetComponentInParent<Unit>().Position = transform.position;
+            GetComponentInParent<Unit>().Health = 100f;
+            allSelectables.Add(GetComponentInParent<Unit>());
+            myRenderer = GetComponent<Renderer>();
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData) {
@@ -33,15 +42,20 @@ public class Selectable : MonoBehaviour, ISelectHandler, IPointerClickHandler,
     }
 
     public void OnSelect(BaseEventData eventData) {
+        if (isUnit) {
 
-        if (!Input.GetKey(KeyCode.LeftControl) &&
-            !Input.GetKey(KeyCode.RightControl)) {
-            // Deselects all to start a new selection
-            DeselectAll(eventData);
+            if (!Input.GetKey(KeyCode.LeftControl) &&
+                !Input.GetKey(KeyCode.RightControl)) {
+                // Deselects all to start a new selection
+                DeselectAll(eventData);
+            }
+
+            currentlySelected.Add(GetComponentInParent<Unit>());
+            myRenderer.material = selectedMaterial;
+        } else {
+            currentlySelected.Move(
+                (eventData as PointerEventData).pointerCurrentRaycast.worldPosition);
         }
-        
-        currentlySelected.Add(this);
-        myRenderer.material = selectedMaterial;
     }
 
     public void OnDeselect(BaseEventData eventData) {
@@ -50,9 +64,14 @@ public class Selectable : MonoBehaviour, ISelectHandler, IPointerClickHandler,
 
     public static void DeselectAll(BaseEventData eventData) {
         // Deselects all the currently selecteds
-        foreach (Selectable s in currentlySelected) {
-            s.OnDeselect(eventData);
+        foreach (Unit unit in currentlySelected) {
+            unit.GetComponentInParent<Selectable>().OnDeselect(eventData);
         }
         currentlySelected.Clear();
+    }
+
+    private void PrintUnitStats(IUnit unit) {
+        Debug.Log("Unit: " + unit.UnitName + ", Position: " +
+            unit.Position + ", HP: " + unit.Health);
     }
 }

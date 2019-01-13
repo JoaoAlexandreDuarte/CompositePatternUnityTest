@@ -7,6 +7,7 @@ public class Selectable : MonoBehaviour, ISelectHandler, IPointerClickHandler,
     // All the selectables
     public static Army allSelectables = new Army();
     // The current selected ones
+    [SerializeField]
     public static Army currentlySelected = new Army();
 
     // Renderer
@@ -50,18 +51,41 @@ public class Selectable : MonoBehaviour, ISelectHandler, IPointerClickHandler,
                 DeselectAll(eventData);
             }
 
+            // Print stats
+            Debug.Log("Selecting-> " +
+                GetUnitStats(GetComponentInParent<Unit>()));
+
+            // Adds the selected unit to the Army
             currentlySelected.Add(GetComponentInParent<Unit>());
             myRenderer.material = selectedMaterial;
         } else {
+            // Moves the selected units
             currentlySelected.Move(
                 (eventData as PointerEventData).pointerCurrentRaycast.worldPosition);
+
+            // Prints the stats
+
+            // If there's nothing to move
+            if (currentlySelected.Count == 0) {
+                Debug.Log("Tried to move to: " +
+                    (eventData as PointerEventData).pointerCurrentRaycast.worldPosition);
+            } else if (currentlySelected.Count == 1) {
+                // If there's only 1 unit to move
+                Debug.Log("Moving-> " + GetUnitStats(currentlySelected[0]));
+            } else {
+                // If there's 2 or more to move
+                Debug.Log("Moving-> " + GetUnitStats(currentlySelected));
+            }
+
         }
     }
 
+    // Deselects the given unit
     public void OnDeselect(BaseEventData eventData) {
         myRenderer.material = unselectedMaterial;
     }
 
+    // Deselects all the units
     public static void DeselectAll(BaseEventData eventData) {
         // Deselects all the currently selecteds
         foreach (Unit unit in currentlySelected) {
@@ -70,8 +94,9 @@ public class Selectable : MonoBehaviour, ISelectHandler, IPointerClickHandler,
         currentlySelected.Clear();
     }
 
-    private void PrintUnitStats(IUnit unit) {
-        Debug.Log("Unit: " + unit.UnitName + ", Position: " +
-            unit.Position + ", HP: " + unit.Health);
+    // Prints the unit stats
+    private string GetUnitStats(IUnit unit) {
+        return "Unit: " + unit.UnitName + ", Position: " +
+            unit.Position + ", HP: " + unit.Health;
     }
 }

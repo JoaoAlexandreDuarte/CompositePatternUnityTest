@@ -6,7 +6,9 @@ public class Unit : MonoBehaviour, IUnit {
     public float Health { get; set; }
 
     public void Move(Vector2 newPosition) {
+        // Moves the Unit/units to the new position
         transform.position = newPosition;
+        Position = newPosition;
     }
 
     public override string ToString() {
